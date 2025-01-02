@@ -2,22 +2,20 @@ package com.github.daitasu
 
 import java.util.*
 import java.util.concurrent.ConcurrentLinkedQueue
+import kotlin.system.measureTimeMillis
 
 /**
  * キューに格納されるメッセージ用インターフェース
  */
-interface Message : Cloneable {
-    public override fun clone(): Message
+interface Message {
+  fun clone(): Message
 }
 
 /**
  * Messageを実装した具体的なメッセージクラス。
  */
 data class GreetingMessage(var message: String) : Message {
-    override fun clone(): Message {
-        // データクラスなので copy() を使えば簡単に複製できます
-        return copy(message = this.message)
-    }
+  override fun clone(): Message = copy()
 }
 
 /**
@@ -34,15 +32,16 @@ abstract class AbstractActor : Runnable {
 
     /**
      * キューにメッセージを格納し、必要に応じてスレッドを起動する
+     * NEW, TERRMINATED ならスレッドを起動/再起動する
      */
     fun tell(message: Message) {
-        // clone() を呼び出し、メッセージの変更がキュー内のデータに影響しないようにする
         messages.add(message.clone())
 
-        // スレッドの状態をチェックし、NEW または TERMINATED なら再度起動
         when (thread.state) {
             Thread.State.NEW, Thread.State.TERMINATED -> thread.start()
-            else -> { /* 既に動作中なら何もしない */ }
+            else -> {
+              // 既に動作中なら何もしない
+            }
         }
     }
 
@@ -66,10 +65,18 @@ abstract class AbstractActor : Runnable {
 /**
  * GreetingMessage を受け取ってコンソールに表示するだけのシンプルな Actor
  */
-class GreetingActor : AbstractActor() {
-    override fun onReceive(msg: Message) {
+class GreetingActor(
+  private val actorName: String
+) : AbstractActor() {
+
+  override fun onReceive(msg: Message) {
         if (msg is GreetingMessage) {
-            println("GreetingActor received: ${msg.message}")
+          println("[$actorName] Received: ${msg.message}")
+
+          Thread.sleep(5000)
+
+          println("[$actorName] Done: ${msg.message}")
+
         } else {
             println("GreetingActor received unknown message: $msg")
         }
@@ -78,8 +85,13 @@ class GreetingActor : AbstractActor() {
 
 fun main() {
     // アクターを生成
-    val actor1 = GreetingActor()
+    val actor1 = GreetingActor(actorName = "Actor1")
+    val actor2 = GreetingActor(actorName = "Actor2")
+
     // メッセージを送信
-    actor1.tell(GreetingMessage("hello"))
-    actor1.tell(GreetingMessage("hello2"))
+    actor1.tell(GreetingMessage("Hello from main() #1"))
+    actor1.tell(GreetingMessage("Hello from main() #2"))
+
+    actor2.tell(GreetingMessage("Another greeting #1"))
+    actor2.tell(GreetingMessage("Another greeting #2"))
 }
