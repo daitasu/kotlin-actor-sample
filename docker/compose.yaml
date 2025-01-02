@@ -1,0 +1,18 @@
+name: kotlin-actor-sample
+
+services:
+  apps:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+      target: development    
+    ports:
+      - "8080:8080"
+    volumes:
+      - ../apps/.gradle:/home/gradle/.gradle
+      - ../apps:/workspace
+    environment:
+      - GRADLE_USER_HOME=/home/gradle/.gradle
+    
+    # command: ["gradle", "run", "--exclude-task", "test"]
+
