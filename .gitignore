@@ -2,3 +2,6 @@
 .gradle
 build/
 bin/
+
+# IDE
+.vscode

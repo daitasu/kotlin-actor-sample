@@ -12,14 +12,9 @@ repositories {
 val ktorVersion = "3.0.3"
 
 dependencies {
-    // Ktor Core
-    implementation("io.ktor:ktor-server-core-jvm:$ktorVersion")
-    // ネットワーク実装に Netty を使用する場合
-    implementation("io.ktor:ktor-server-netty-jvm:$ktorVersion")
-    // ログ出力 (Logback)
-    implementation("ch.qos.logback:logback-classic:1.4.11")
-
     testImplementation(kotlin("test"))
+
+    implementation("org.apache.pekko:pekko-actor-typed_2.13:1.1.1")
 }
 
 application {
