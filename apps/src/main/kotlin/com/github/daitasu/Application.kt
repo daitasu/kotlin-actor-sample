@@ -1,58 +1,46 @@
 package com.github.daitasu
 
-import org.apache.pekko.actor.AbstractActor
-import org.apache.pekko.actor.ActorRef
-import org.apache.pekko.actor.ActorSystem
-import org.apache.pekko.actor.Props
+import org.apache.pekko.actor.typed.ActorSystem
+import org.apache.pekko.actor.typed.Behavior
+import org.apache.pekko.actor.typed.javadsl.Behaviors
+import org.apache.pekko.cluster.typed.Cluster
+import org.apache.pekko.cluster.typed.Join
+import com.typesafe.config.ConfigFactory
 
-/**
- * キューに追加されるメッセージクラス
- */
 data class GreetingMessage(val message: String)
 
-/**
- * Pekko のアクタークラス
- */
-class GreetingActor : AbstractActor() {
-  /**
-   * 受信するメッセージとその処理を定義する
-   */
-  override fun createReceive(): Receive {
-      return receiveBuilder()
-          .match(GreetingMessage::class.java) { msg ->
-              println("[${self.path().name()}] Received: ${msg.message}")
-              // 疑似的に重い処理: 2 秒待つ
-              Thread.sleep(2000)
-              println("[${self.path().name()}] Done: ${msg.message}")
-          }
-          .build()
+object GreetingActor {
+  fun create(): Behavior<GreetingMessage> =
+    Behaviors.receive<GreetingMessage> { context, message ->
+      val member = Cluster.get(context.system).selfMember()
+      println("[${message.message}] Received by: ${member.address()}")
+      Behaviors.same<GreetingMessage>()
   }
 }
 
-/**
- * main 関数。
- * Pekko の ActorSystem を生成し、
- * GreetingActor を2つ生成してメッセージを送信する。
- */
-fun main() {
-  // ActorSystem を作成
-  val system = ActorSystem.create("MyActorSystem")
+fun main(args: Array<String>) {
+    val port = if (args.isNotEmpty()) args[0].toInt() else 2551
 
-  // GreetingActor のインスタンスを生成 (ActorRef を取得)
-  val actor1 = system.actorOf(Props.create(GreetingActor::class.java), "Actor1")
-  val actor2 = system.actorOf(Props.create(GreetingActor::class.java), "Actor2")
+    // 環境変数を設定
+    System.setProperty("PEKKO_CANONICAL_HOSTNAME", if (port == 2551) "node-1" else "node-2")
+    System.setProperty("PEKKO_CANONICAL_PORT", port.toString())
 
-  // メッセージを送る
-  actor1.tell(GreetingMessage("Hello #1"), ActorRef.noSender())
-  actor2.tell(GreetingMessage("Hello #2"), ActorRef.noSender())
-  actor1.tell(GreetingMessage("Hello #3"), ActorRef.noSender())
-  actor2.tell(GreetingMessage("Hello #4"), ActorRef.noSender())
+    // application.conf を読み込む
+    val config = ConfigFactory.load()
 
-  println("All messages sent from main")
+    val system = ActorSystem.create(
+        GreetingActor.create(),
+        "MyActorSystem",
+        config
+    )
 
-  // しばらく待って実行ログを確認
-  Thread.sleep(10000)
+    Cluster.get(system).manager().tell(Join.create(Cluster.get(system).selfMember().address()))
 
-  // 4) アクターシステムをシャットダウン
-  system.terminate()
+    if (port != 2551) {
+        Thread.sleep(5000) // 他のノードが起動するのを待つ
+        val message = GreetingMessage("Hello from node 1")
+        system.tell(message)
+    }
+
+    println("Started ${Cluster.get(system).selfMember().address()}")
 }

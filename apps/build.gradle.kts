@@ -15,6 +15,10 @@ dependencies {
     testImplementation(kotlin("test"))
 
     implementation("org.apache.pekko:pekko-actor-typed_2.13:1.1.1")
+    implementation("org.apache.pekko:pekko-cluster-typed_2.13:1.1.1")
+    implementation("org.apache.pekko:pekko-serialization-jackson_2.13:1.1.1")
+    implementation("org.apache.pekko:pekko-remote_2.13:1.1.1")
+
 }
 
 application {
