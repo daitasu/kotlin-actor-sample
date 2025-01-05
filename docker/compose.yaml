@@ -1,32 +1,38 @@
 name: kotlin-actor-sample
 
 services:
-  node-1:
+  seed:
+    container_name: pekko-cluster-seed
     build:
       context: ..
       dockerfile: docker/Dockerfile
-      target: development
+      target: node1
     ports:
       - "2551:2551"
-    volumes:
-      - ../apps/.gradle:/home/gradle/.gradle
-      - ../apps:/workspace
     environment:
-      - GRADLE_USER_HOME=/home/gradle/.gradle
-    command: ["gradle", "run"]
-
-  node-2:
+      CLUSTER_PORT: 2551
+      CLUSTER_IP: seed
+  c1:
+    container_name: pekko-cluster-c1
     build:
       context: ..
       dockerfile: docker/Dockerfile
-      target: development
+      target: node2
     ports:
       - "2552:2552"
-    volumes:
-      - ../apps/.gradle:/home/gradle/.gradle
-      - ../apps:/workspace
     environment:
-      - GRADLE_USER_HOME=/home/gradle/.gradle
-    command: ["gradle", "run"]
-    depends_on:
-      - node-1 
+      CLUSTER_PORT: 2552
+      CLUSTER_IP: c1
+      SEED_PORT: 2551
+  c2:
+    container_name: pekko-cluster-c2
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+      target: node2
+    ports:
+      - "2553:2553"
+    environment:
+      CLUSTER_PORT: 2553
+      CLUSTER_IP: c2
+      SEED_PORT: 2551

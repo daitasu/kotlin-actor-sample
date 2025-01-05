@@ -13,32 +13,35 @@ object GreetingActor {
   fun create(): Behavior<GreetingMessage> =
     Behaviors.receive<GreetingMessage> { context, message ->
       val member = Cluster.get(context.system).selfMember()
-      println("[${message.message}] Received by: ${member.address()}")
+      println("[Address: ${member.address()}] Message: ${message.message}")
       Behaviors.same<GreetingMessage>()
   }
 }
 
-fun main(args: Array<String>) {
-    val port = if (args.isNotEmpty()) args[0].toInt() else 2551
+fun main() {
+    val port = System.getenv("CLUSTER_PORT")?.toIntOrNull() ?: 2551
+    val hostname = System.getenv("CLUSTER_IP") ?: "127.0.0.1"
 
-    // 環境変数を設定
-    System.setProperty("PEKKO_CANONICAL_HOSTNAME", if (port == 2551) "node-1" else "node-2")
-    System.setProperty("PEKKO_CANONICAL_PORT", port.toString())
+    // Pekkoのプロパティを設定
+    System.setProperty("pekko.remote.artery.canonical.hostname", hostname)
+    System.setProperty("pekko.remote.artery.canonical.port", port.toString())
 
     // application.conf を読み込む
     val config = ConfigFactory.load()
 
+    // アクターシステムの起動
     val system = ActorSystem.create(
         GreetingActor.create(),
         "MyActorSystem",
         config
     )
 
+    // クラスタにノードをJOIN する
     Cluster.get(system).manager().tell(Join.create(Cluster.get(system).selfMember().address()))
 
     if (port != 2551) {
-        Thread.sleep(5000) // 他のノードが起動するのを待つ
-        val message = GreetingMessage("Hello from node 1")
+        Thread.sleep(5000)
+        val message = GreetingMessage("Hello World")
         system.tell(message)
     }
 
