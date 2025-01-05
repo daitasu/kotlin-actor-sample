@@ -23,16 +23,14 @@ services:
     environment:
       CLUSTER_PORT: 2552
       CLUSTER_IP: c1
-      SEED_PORT: 2551
   c2:
     container_name: pekko-cluster-c2
     build:
       context: ..
       dockerfile: docker/Dockerfile
-      target: node2
+      target: node3
     ports:
       - "2553:2553"
     environment:
       CLUSTER_PORT: 2553
       CLUSTER_IP: c2
-      SEED_PORT: 2551

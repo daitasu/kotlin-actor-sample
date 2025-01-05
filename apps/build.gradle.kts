@@ -8,8 +8,6 @@ repositories {
     mavenCentral()
 }
 
-val ktorVersion = "3.0.3"
-
 dependencies {
     testImplementation(kotlin("test"))
 
@@ -17,11 +15,9 @@ dependencies {
     implementation("org.apache.pekko:pekko-cluster-typed_2.13:1.1.2")
     implementation("org.apache.pekko:pekko-cluster-tools_2.13:1.1.2")
     implementation("org.apache.pekko:pekko-remote_2.13:1.1.2")
-    implementation("org.apache.pekko:pekko-stream_2.13:1.1.2")
     implementation("org.apache.pekko:pekko-slf4j_2.13:1.1.2")
 
     implementation("org.slf4j:slf4j-simple:2.0.16")
-
 }
 
 tasks.withType<com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar> {
